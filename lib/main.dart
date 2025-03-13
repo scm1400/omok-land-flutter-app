@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'screens/splash_screen.dart';
+import 'screens/home_screen.dart';
 import 'package:webview_windows/webview_windows.dart';
 
 Future<void> main() async {
@@ -11,6 +12,8 @@ Future<void> main() async {
   // Hive 초기화
   await Hive.initFlutter();
   await Hive.openBox('settings');
+  await Hive.openBox<String>('zep_spaces');
+  await Hive.openBox<bool>('favorites');
 
   // 상태바, 내비게이션바 컬러 설정(안드로이드)
   SystemChrome.setSystemUIOverlayStyle(
@@ -31,14 +34,26 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ZEP WebView',
+      title: 'ZEP 스페이스 갤러리',
       theme: ThemeData(
         primarySwatch: Colors.teal,
         brightness: Brightness.light,
+        useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.teal,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
       ),
       darkTheme: ThemeData(
         primarySwatch: Colors.teal,
         brightness: Brightness.dark,
+        useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.teal,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
       ),
       themeMode: ThemeMode.system,
       home: const SplashScreen(),

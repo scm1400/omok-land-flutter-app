@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class WebAppPage extends StatefulWidget {
-  const WebAppPage({Key? key}) : super(key: key);
+  const WebAppPage({super.key});
 
   @override
   State<WebAppPage> createState() => _WebAppPageState();
@@ -33,62 +33,66 @@ class _WebAppPageState extends State<WebAppPage> {
     initialUrl = _settingsBox.get('lastUrl', defaultValue: 'https://zep.us');
 
     // 새로운 컨트롤러 초기화
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onNavigationRequest: (request) {
-            // 새 창 열기(target="_blank") 감지
-            if (!request.isMainFrame) {
-              // 외부 브라우저로 오픈
-              _launchInBrowser(request.url);
-              return NavigationDecision.prevent;
-            }
-            // iOS에서 특정 링크는 외부로 열도록
-            if (_shouldOpenExternally(request.url)) {
-              _launchInBrowser(request.url);
-              return NavigationDecision.prevent;
-            }
-            return NavigationDecision.navigate;
-          },
-          onPageStarted: (url) {
-            setState(() {
-              isLoading = true;
-              hasError = false;
-            });
-          },
-          onPageFinished: (url) async {
-            // 마지막 방문 저장
-            _settingsBox.put('lastUrl', url);
-            // 뒤로가기/앞으로가기 여부 체크
-            final back = await _controller.canGoBack();
-            final forward = await _controller.canGoForward();
-            setState(() {
-              isLoading = false;
-              canGoBack = back;
-              canGoForward = forward;
-            });
-          },
-          onWebResourceError: (error) {
-            setState(() {
-              hasError = true;
-              isLoading = false;
-              errorMessage = error.description;
-            });
-          },
-        ),
-      )
-      ..addJavaScriptChannel(
-        'Flutter',
-        onMessageReceived: (JavaScriptMessage message) {
-          // 웹 -> Flutter ( window.Flutter.postMessage(...) )
-          final msg = message.message;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('웹에서 보낸 메시지: $msg')),
-          );
-        },
-      )
-      ..loadRequest(Uri.parse(initialUrl));
+    _controller =
+        WebViewController()
+          ..setJavaScriptMode(JavaScriptMode.unrestricted)
+          ..setUserAgent(
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+          )
+          ..setNavigationDelegate(
+            NavigationDelegate(
+              onNavigationRequest: (request) {
+                // 새 창 열기(target="_blank") 감지
+                if (!request.isMainFrame) {
+                  // 외부 브라우저로 오픈
+                  _launchInBrowser(request.url);
+                  return NavigationDecision.prevent;
+                }
+                // iOS에서 특정 링크는 외부로 열도록
+                if (_shouldOpenExternally(request.url)) {
+                  _launchInBrowser(request.url);
+                  return NavigationDecision.prevent;
+                }
+                return NavigationDecision.navigate;
+              },
+              onPageStarted: (url) {
+                setState(() {
+                  isLoading = true;
+                  hasError = false;
+                });
+              },
+              onPageFinished: (url) async {
+                // 마지막 방문 저장
+                _settingsBox.put('lastUrl', url);
+                // 뒤로가기/앞으로가기 여부 체크
+                final back = await _controller.canGoBack();
+                final forward = await _controller.canGoForward();
+                setState(() {
+                  isLoading = false;
+                  canGoBack = back;
+                  canGoForward = forward;
+                });
+              },
+              onWebResourceError: (error) {
+                setState(() {
+                  hasError = true;
+                  isLoading = false;
+                  errorMessage = error.description;
+                });
+              },
+            ),
+          )
+          ..addJavaScriptChannel(
+            'Flutter',
+            onMessageReceived: (JavaScriptMessage message) {
+              // 웹 -> Flutter ( window.Flutter.postMessage(...) )
+              final msg = message.message;
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('웹에서 보낸 메시지: $msg')));
+            },
+          )
+          ..loadRequest(Uri.parse(initialUrl));
 
     // 안드로이드에선 하드웨어 가속을 위해 필요(전 버전에선 SurfaceAndroidWebView() 등)
     // 현재는 자동으로 적용되므로, 특별히 설정하지 않아도 동작 가능
@@ -106,45 +110,47 @@ class _WebAppPageState extends State<WebAppPage> {
         return true;
       },
       child: Scaffold(
-        appBar: isFullScreen
-            ? null
-            : AppBar(
-                title: const Text('Zep Browser'),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: canGoBack
-                        ? () async {
-                            if (await _controller.canGoBack()) {
-                              _controller.goBack();
-                            }
-                          }
-                        : null,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_forward),
-                    onPressed: canGoForward
-                        ? () async {
-                            if (await _controller.canGoForward()) {
-                              _controller.goForward();
-                            }
-                          }
-                        : null,
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
+        appBar:
+            isFullScreen
+                ? null
+                : AppBar(
+                  title: const Text('Zep Browser'),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed:
+                          canGoBack
+                              ? () async {
+                                if (await _controller.canGoBack()) {
+                                  _controller.goBack();
+                                }
+                              }
+                              : null,
                     ),
-                    onPressed: _toggleFullScreen,
-                  ),
-                ],
-              ),
+                    IconButton(
+                      icon: const Icon(Icons.arrow_forward),
+                      onPressed:
+                          canGoForward
+                              ? () async {
+                                if (await _controller.canGoForward()) {
+                                  _controller.goForward();
+                                }
+                              }
+                              : null,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                      ),
+                      onPressed: _toggleFullScreen,
+                    ),
+                  ],
+                ),
         body: Stack(
           children: [
             // 새로운 API: WebViewWidget + WebViewController
             WebViewWidget(controller: _controller),
-            if (isLoading)
-              const Center(child: CircularProgressIndicator()),
+            if (isLoading) const Center(child: CircularProgressIndicator()),
             if (hasError)
               Center(
                 child: Container(

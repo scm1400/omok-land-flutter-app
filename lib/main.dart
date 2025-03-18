@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'screens/splash_screen.dart';
-import 'screens/home_screen.dart';
-import 'package:webview_windows/webview_windows.dart';
+import 'screens/omok_app_screen.dart';
+import 'screens/friends_screen.dart';
+import 'screens/chat_list_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // intl 패키지 로케일 데이터 초기화
+  await initializeDateFormatting('ko_KR', null);
+  Intl.defaultLocale = 'ko_KR';
 
   // Hive 초기화
   await Hive.initFlutter();
@@ -34,7 +42,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ZEP 스페이스 갤러리',
+      title: 'ZEP 오목',
       theme: ThemeData(
         primarySwatch: Colors.teal,
         brightness: Brightness.light,
@@ -56,7 +64,13 @@ class MyApp extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.system,
-      home: const SplashScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/omok': (context) => const OmokAppScreen(),
+        '/friends': (context) => const FriendsScreen(),
+        '/chats': (context) => const ChatListScreen(),
+      },
     );
   }
 }

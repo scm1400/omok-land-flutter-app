@@ -1,223 +1,46 @@
-# zep_flutter_app
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-```
-zep_flutter_app
-├─ .metadata
-├─ analysis_options.yaml
-├─ android
-│  ├─ app
-│  │  ├─ build.gradle.kts
-│  │  └─ src
-│  │     ├─ debug
-│  │     │  └─ AndroidManifest.xml
-│  │     ├─ main
-│  │     │  ├─ AndroidManifest.xml
-│  │     │  ├─ java
-│  │     │  │  └─ io
-│  │     │  │     └─ flutter
-│  │     │  │        └─ plugins
-│  │     │  │           └─ GeneratedPluginRegistrant.java
-│  │     │  ├─ kotlin
-│  │     │  │  └─ com
-│  │     │  │     └─ example
-│  │     │  │        └─ zep_flutter_app
-│  │     │  │           └─ MainActivity.kt
-│  │     │  └─ res
-│  │     │     ├─ drawable
-│  │     │     │  └─ launch_background.xml
-│  │     │     ├─ drawable-v21
-│  │     │     │  └─ launch_background.xml
-│  │     │     ├─ mipmap-hdpi
-│  │     │     │  └─ ic_launcher.png
-│  │     │     ├─ mipmap-mdpi
-│  │     │     │  └─ ic_launcher.png
-│  │     │     ├─ mipmap-xhdpi
-│  │     │     │  └─ ic_launcher.png
-│  │     │     ├─ mipmap-xxhdpi
-│  │     │     │  └─ ic_launcher.png
-│  │     │     ├─ mipmap-xxxhdpi
-│  │     │     │  └─ ic_launcher.png
-│  │     │     ├─ values
-│  │     │     │  └─ styles.xml
-│  │     │     └─ values-night
-│  │     │        └─ styles.xml
-│  │     └─ profile
-│  │        └─ AndroidManifest.xml
-│  ├─ build.gradle.kts
-│  ├─ gradle
-│  │  └─ wrapper
-│  │     ├─ gradle-wrapper.jar
-│  │     └─ gradle-wrapper.properties
-│  ├─ gradle.properties
-│  ├─ gradlew
-│  ├─ gradlew.bat
-│  ├─ local.properties
-│  └─ settings.gradle.kts
-├─ ios
-│  ├─ Flutter
-│  │  ├─ AppFrameworkInfo.plist
-│  │  ├─ Debug.xcconfig
-│  │  ├─ flutter_export_environment.sh
-│  │  ├─ Generated.xcconfig
-│  │  └─ Release.xcconfig
-│  ├─ Runner
-│  │  ├─ AppDelegate.swift
-│  │  ├─ Assets.xcassets
-│  │  │  ├─ AppIcon.appiconset
-│  │  │  │  ├─ Contents.json
-│  │  │  │  ├─ Icon-App-1024x1024@1x.png
-│  │  │  │  ├─ Icon-App-20x20@1x.png
-│  │  │  │  ├─ Icon-App-20x20@2x.png
-│  │  │  │  ├─ Icon-App-20x20@3x.png
-│  │  │  │  ├─ Icon-App-29x29@1x.png
-│  │  │  │  ├─ Icon-App-29x29@2x.png
-│  │  │  │  ├─ Icon-App-29x29@3x.png
-│  │  │  │  ├─ Icon-App-40x40@1x.png
-│  │  │  │  ├─ Icon-App-40x40@2x.png
-│  │  │  │  ├─ Icon-App-40x40@3x.png
-│  │  │  │  ├─ Icon-App-60x60@2x.png
-│  │  │  │  ├─ Icon-App-60x60@3x.png
-│  │  │  │  ├─ Icon-App-76x76@1x.png
-│  │  │  │  ├─ Icon-App-76x76@2x.png
-│  │  │  │  └─ Icon-App-83.5x83.5@2x.png
-│  │  │  └─ LaunchImage.imageset
-│  │  │     ├─ Contents.json
-│  │  │     ├─ LaunchImage.png
-│  │  │     ├─ LaunchImage@2x.png
-│  │  │     ├─ LaunchImage@3x.png
-│  │  │     └─ README.md
-│  │  ├─ Base.lproj
-│  │  │  ├─ LaunchScreen.storyboard
-│  │  │  └─ Main.storyboard
-│  │  ├─ GeneratedPluginRegistrant.h
-│  │  ├─ GeneratedPluginRegistrant.m
-│  │  ├─ Info.plist
-│  │  └─ Runner-Bridging-Header.h
-│  ├─ Runner.xcodeproj
-│  │  ├─ project.pbxproj
-│  │  ├─ project.xcworkspace
-│  │  │  ├─ contents.xcworkspacedata
-│  │  │  └─ xcshareddata
-│  │  │     ├─ IDEWorkspaceChecks.plist
-│  │  │     └─ WorkspaceSettings.xcsettings
-│  │  └─ xcshareddata
-│  │     └─ xcschemes
-│  │        └─ Runner.xcscheme
-│  ├─ Runner.xcworkspace
-│  │  ├─ contents.xcworkspacedata
-│  │  └─ xcshareddata
-│  │     ├─ IDEWorkspaceChecks.plist
-│  │     └─ WorkspaceSettings.xcsettings
-│  └─ RunnerTests
-│     └─ RunnerTests.swift
-├─ lib
-│  └─ main.dart
-├─ linux
-│  ├─ CMakeLists.txt
-│  ├─ flutter
-│  │  ├─ CMakeLists.txt
-│  │  ├─ generated_plugins.cmake
-│  │  ├─ generated_plugin_registrant.cc
-│  │  └─ generated_plugin_registrant.h
-│  └─ runner
-│     ├─ CMakeLists.txt
-│     ├─ main.cc
-│     ├─ my_application.cc
-│     └─ my_application.h
-├─ macos
-│  ├─ Flutter
-│  │  ├─ ephemeral
-│  │  │  ├─ Flutter-Generated.xcconfig
-│  │  │  └─ flutter_export_environment.sh
-│  │  ├─ Flutter-Debug.xcconfig
-│  │  ├─ Flutter-Release.xcconfig
-│  │  └─ GeneratedPluginRegistrant.swift
-│  ├─ Runner
-│  │  ├─ AppDelegate.swift
-│  │  ├─ Assets.xcassets
-│  │  │  └─ AppIcon.appiconset
-│  │  │     ├─ app_icon_1024.png
-│  │  │     ├─ app_icon_128.png
-│  │  │     ├─ app_icon_16.png
-│  │  │     ├─ app_icon_256.png
-│  │  │     ├─ app_icon_32.png
-│  │  │     ├─ app_icon_512.png
-│  │  │     ├─ app_icon_64.png
-│  │  │     └─ Contents.json
-│  │  ├─ Base.lproj
-│  │  │  └─ MainMenu.xib
-│  │  ├─ Configs
-│  │  │  ├─ AppInfo.xcconfig
-│  │  │  ├─ Debug.xcconfig
-│  │  │  ├─ Release.xcconfig
-│  │  │  └─ Warnings.xcconfig
-│  │  ├─ DebugProfile.entitlements
-│  │  ├─ Info.plist
-│  │  ├─ MainFlutterWindow.swift
-│  │  └─ Release.entitlements
-│  ├─ Runner.xcodeproj
-│  │  ├─ project.pbxproj
-│  │  ├─ project.xcworkspace
-│  │  │  └─ xcshareddata
-│  │  │     └─ IDEWorkspaceChecks.plist
-│  │  └─ xcshareddata
-│  │     └─ xcschemes
-│  │        └─ Runner.xcscheme
-│  ├─ Runner.xcworkspace
-│  │  ├─ contents.xcworkspacedata
-│  │  └─ xcshareddata
-│  │     └─ IDEWorkspaceChecks.plist
-│  └─ RunnerTests
-│     └─ RunnerTests.swift
-├─ pubspec.lock
-├─ pubspec.yaml
-├─ README.md
-├─ test
-│  └─ widget_test.dart
-├─ web
-│  ├─ favicon.png
-│  ├─ icons
-│  │  ├─ Icon-192.png
-│  │  ├─ Icon-512.png
-│  │  ├─ Icon-maskable-192.png
-│  │  └─ Icon-maskable-512.png
-│  ├─ index.html
-│  └─ manifest.json
-└─ windows
-   ├─ CMakeLists.txt
-   ├─ flutter
-   │  ├─ CMakeLists.txt
-   │  ├─ generated_plugins.cmake
-   │  ├─ generated_plugin_registrant.cc
-   │  └─ generated_plugin_registrant.h
-   └─ runner
-      ├─ CMakeLists.txt
-      ├─ flutter_window.cpp
-      ├─ flutter_window.h
-      ├─ main.cpp
-      ├─ resource.h
-      ├─ resources
-      │  └─ app_icon.ico
-      ├─ runner.exe.manifest
-      ├─ Runner.rc
-      ├─ utils.cpp
-      ├─ utils.h
-      ├─ win32_window.cpp
-      └─ win32_window.h
-
-```
+ZEP 오목 앱 기능 요약
+핵심 기능:
+ZEP 오목 웹앱(https://zep.us/@omok)을 네이티브 앱으로 제공
+웹뷰를 통한 오목 게임 플레이
+게임 플레이 시간 및 횟수 추적
+풀스크린 모드 지원
+친구 관리 기능:
+친구 목록 관리 (추가, 수정, 삭제)
+친구 정보 저장 (이름, ZEP ID, 이메일, 전화번호)
+즐겨찾기 친구 설정
+친구 검색 기능
+채팅 기능 (새로 추가):
+친구와 1:1 실시간 채팅
+채팅 목록 관리
+읽음/안 읽음 상태 표시
+대화방 관리 (삭제, 알림 설정)
+오목 게임 초대 기능
+이미지 첨부 기능 (향후 구현 준비)
+소셜 기능:
+친구에게 오목 게임 초대 기능
+친구 연락처 공유 기능
+ZEP 오목 링크 공유
+채팅을 통한 소통
+부가 기능:
+앱 사용 통계 기록 (게임 플레이 횟수, 마지막 플레이 시간)
+오프라인 모드 감지 및 처리
+앱 평가 요청 (5번 이상 플레이 후)
+이 앱은 앱스토어 심사를 위한 다양한 네이티브 기능을 포함하고 있어 심사에 통과하기 좋은 구조를 갖추고 있습니다:
+다양한 네이티브 기능:
+친구 목록 관리 (메모리 저장소 사용)
+채팅 기능 (메모리 저장소 사용)
+알림 시스템 (읽지 않은 메시지 표시)
+플레이 통계 추적 (SharedPreferences 사용)
+소셜 공유 기능 (Share API 사용)
+데이터 관리:
+Repository 패턴을 사용하여 데이터 추상화
+메모리 기반으로 구현했지만 나중에 실제 DB로 쉽게 전환 가능
+스트림 기반의 실시간 데이터 동기화
+사용자 경험 개선:
+풀스크린 게임 모드
+오프라인 상태 처리
+채팅 기능으로 소셜 요소 강화
+친구와 함께 게임 플레이 유도
+직관적인 UI 디자인
+모든 기능은 메모리에 저장되도록 구현되어 있어 앱을 다시 시작하면 데이터가 초기화됩니다. 하지만 FriendRepository와 ChatRepository 인터페이스를 구현하는 새로운 클래스를 만들면 Hive, SQLite, Firebase 등의 영구 저장소로 쉽게 전환할 수 있습니다.
+이제 이 앱은 단순한 웹뷰 앱이 아닌, 네이티브 기능이 풍부한 완전한 앱으로 변모했습니다. 친구 관리와 채팅 기능을 통해 사용자들은 더 쉽게 소통하고 함께 오목 게임을 즐길 수 있습니다.

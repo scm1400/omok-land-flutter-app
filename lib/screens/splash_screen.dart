@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,12 +11,9 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // 2초 뒤에 HomeScreen으로 넘어감
+    // 2초 뒤에 OmokAppScreen으로 넘어감
     Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+      Navigator.pushReplacementNamed(context, '/omok');
     });
   }
 
@@ -40,14 +36,19 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 24),
             const Text(
-              'ZEP 스페이스 갤러리',
+              'ZEP 오목',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            const Text(
+              '친구와 함께 오목을 즐겨보세요',
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+            const SizedBox(height: 24),
             const CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),

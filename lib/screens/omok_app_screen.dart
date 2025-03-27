@@ -5,6 +5,9 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../main.dart'; // AppColors 클래스 import
 
 class OmokAppScreen extends StatefulWidget {
   const OmokAppScreen({super.key});
@@ -265,127 +268,320 @@ class _OmokAppScreenState extends State<OmokAppScreen>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (await _controller.canGoBack()) {
-          _controller.goBack();
-          return false;
-        }
-        return true;
-      },
-      child: Scaffold(
-        appBar:
-            isFullScreen
-                ? null
-                : AppBar(
-                  title: const Text('ZEP 오목'),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.chat),
-                      tooltip: '채팅',
-                      onPressed: () => Navigator.pushNamed(context, '/chats'),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'ZEP 오목',
+          style: GoogleFonts.blackHanSans(
+            textStyle: const TextStyle(fontSize: 22),
+          ),
+        ),
+        centerTitle: true,
+        leading:
+            canGoBack
+                ? IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  onPressed: () async {
+                    if (await _controller.canGoBack()) {
+                      _controller.goBack();
+                    }
+                  },
+                )
+                : null,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            itemBuilder:
+                (context) => [
+                  const PopupMenuItem(
+                    value: 'reload',
+                    child: Row(
+                      children: [
+                        Icon(Icons.refresh, color: AppColors.oceanBlue),
+                        SizedBox(width: 10),
+                        Text('새로고침'),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.refresh),
-                      onPressed: () => _controller.reload(),
+                  ),
+                  const PopupMenuItem(
+                    value: 'fullscreen',
+                    child: Row(
+                      children: [
+                        Icon(Icons.fullscreen, color: AppColors.oceanBlue),
+                        SizedBox(width: 10),
+                        Text('전체화면'),
+                      ],
                     ),
-                    IconButton(
-                      icon: Icon(
-                        isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                  ),
+                  const PopupMenuItem(
+                    value: 'info',
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: AppColors.oceanBlue),
+                        SizedBox(width: 10),
+                        Text('앱 정보'),
+                      ],
+                    ),
+                  ),
+                ],
+            onSelected: (value) {
+              switch (value) {
+                case 'reload':
+                  _controller.reload();
+                  break;
+                case 'fullscreen':
+                  setState(() {
+                    isFullScreen = !isFullScreen;
+                  });
+                  break;
+                case 'info':
+                  _showAppInfo();
+                  break;
+              }
+            },
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          // 웹뷰
+          WebViewWidget(controller: _controller),
+
+          // 로딩 인디케이터
+          if (isLoading)
+            Container(
+              color: AppColors.skyBlue.withOpacity(0.7),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.woodBeige,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      onPressed: _toggleFullScreen,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 50,
+                            height: 50,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.coralOrange,
+                              ),
+                              strokeWidth: 5,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            '게임 로딩 중...',
+                            style: GoogleFonts.nanumGothic(
+                              textStyle: TextStyle(
+                                color: AppColors.darkBrown,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-        body: Stack(
-          children: [
-            WebViewWidget(controller: _controller),
-            if (isLoading) const Center(child: CircularProgressIndicator()),
-            if (isOffline)
-              Center(
-                child: Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
-                      const SizedBox(height: 16),
-                      const Text(
-                        '인터넷 연결이 끊어졌습니다',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+              ),
+            ),
+
+          // 오프라인 상태 표시
+          if (isOffline)
+            Container(
+              color: Colors.white,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: AppColors.woodBeige,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: AppColors.earthBrown,
+                          width: 2,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        '인터넷 연결을 확인하고 다시 시도해주세요',
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.wifi_off_rounded,
+                            size: 50,
+                            color: AppColors.darkBrown,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '인터넷 연결이 끊겼습니다',
+                            style: GoogleFonts.nanumGothic(
+                              textStyle: TextStyle(
+                                color: AppColors.darkBrown,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '네트워크 연결을 확인해주세요',
+                            style: GoogleFonts.nanumGothic(
+                              textStyle: TextStyle(
+                                color: AppColors.darkBrown.withOpacity(0.7),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: _checkConnection,
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('다시 시도'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          _checkConnection();
-                        },
-                        child: const Text('재시도'),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            if (hasError && !isOffline)
-              Center(
-                child: Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        '오류가 발생했습니다',
-                        style: TextStyle(color: Colors.black, fontSize: 16),
+            ),
+
+          // 에러 상태 표시 (오프라인 상태가 아닌 경우만)
+          if (hasError && !isOffline)
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(16),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: AppColors.woodBeige,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: AppColors.earthBrown,
+                          width: 2,
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            hasError = false;
-                            isLoading = true;
-                          });
-                          _controller.reload();
-                        },
-                        child: const Text('재시도'),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.error_outline_rounded,
+                            size: 50,
+                            color: Colors.red.shade700,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '오류가 발생했습니다',
+                            style: GoogleFonts.nanumGothic(
+                              textStyle: TextStyle(
+                                color: AppColors.darkBrown,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            errorMessage,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.nanumGothic(
+                              textStyle: TextStyle(
+                                color: AppColors.darkBrown.withOpacity(0.7),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              _controller.reload();
+                            },
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('다시 시도'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-          ],
-        ),
-        floatingActionButton: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FloatingActionButton(
-              heroTag: 'chat_button',
-              onPressed: () {
-                Navigator.pushNamed(context, '/chats');
-              },
-              mini: true,
-              tooltip: '채팅 목록',
-              child: const Icon(Icons.chat),
             ),
-            const SizedBox(height: 8),
-            FloatingActionButton(
-              heroTag: 'friends_button',
-              onPressed: () {
-                Navigator.pushNamed(context, '/friends');
-              },
-              tooltip: '친구 목록',
-              child: const Icon(Icons.people),
-            ),
-          ],
-        ),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        backgroundColor: AppColors.woodBeige,
+        indicatorColor: AppColors.coralOrange.withOpacity(0.2),
+        elevation: 8,
+        selectedIndex: 0,
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.grid_on_rounded), label: '오목'),
+          NavigationDestination(icon: Icon(Icons.people_rounded), label: '친구'),
+          NavigationDestination(icon: Icon(Icons.chat_rounded), label: '채팅'),
+        ],
+        onDestinationSelected: (index) {
+          switch (index) {
+            case 0:
+              // 이미 오목 화면이므로 아무것도 안함
+              break;
+            case 1:
+              Navigator.pushReplacementNamed(context, '/friends');
+              break;
+            case 2:
+              Navigator.pushReplacementNamed(context, '/chats');
+              break;
+          }
+        },
       ),
     );
   }
@@ -410,5 +606,175 @@ class _OmokAppScreenState extends State<OmokAppScreen>
     setState(() {
       isFullScreen = !isFullScreen;
     });
+  }
+
+  // 앱 정보 다이얼로그 표시
+  void _showAppInfo() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.woodBeige,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.earthBrown, width: 1.5),
+                  ),
+                  child: Icon(
+                    Icons.gamepad_rounded,
+                    color: AppColors.darkBrown,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '오목랜드',
+                  style: GoogleFonts.nanumGothic(
+                    textStyle: TextStyle(
+                      color: AppColors.darkBrown,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            backgroundColor: AppColors.skyBlue,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _infoItem(
+                  icon: Icons.info_outline,
+                  title: '버전',
+                  value: '1.0.0',
+                ),
+                const SizedBox(height: 8),
+                _infoItem(
+                  icon: Icons.person_outline,
+                  title: '개발자',
+                  value: '오목납치범',
+                ),
+                const SizedBox(height: 8),
+                _infoItem(
+                  icon: Icons.language,
+                  title: 'Powered by ZEP',
+                  value: 'https://zep.us',
+                  isLink: true,
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.woodBeige,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.sports_esports, color: AppColors.coralOrange),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '총 플레이 횟수: $playCount회',
+                          style: GoogleFonts.nanumGothic(
+                            textStyle: TextStyle(
+                              color: AppColors.darkBrown,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('닫기'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // 정보 아이템 위젯
+  Widget _infoItem({
+    required IconData icon,
+    required String title,
+    required String value,
+    bool isLink = false,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: AppColors.oceanBlue.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 18, color: AppColors.oceanBlue),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.nanumGothic(
+                  textStyle: TextStyle(
+                    color: AppColors.darkBrown.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              if (isLink)
+                InkWell(
+                  onTap: () async {
+                    final uri = Uri.parse(value);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    }
+                  },
+                  child: Text(
+                    value,
+                    style: GoogleFonts.nanumGothic(
+                      textStyle: TextStyle(
+                        color: AppColors.oceanBlue,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  value,
+                  style: GoogleFonts.nanumGothic(
+                    textStyle: TextStyle(
+                      color: AppColors.darkBrown,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

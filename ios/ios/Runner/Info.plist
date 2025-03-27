@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>오목랜드</string>
+	<string>Ios</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>오목랜드</string>
+	<string>ios</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -44,35 +44,6 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	
-	<!-- 웹뷰 관련 설정 -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
-	
-	<!-- iOS 앱 공유 기능 관련 설정 -->
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>https</string>
-		<string>http</string>
-	</array>
-	
-	<!-- 웹뷰 사용자 에이전트 설정 -->
-	<key>WKWebViewConfiguration</key>
-	<dict>
-		<key>UserAgent</key>
-		<string>Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1</string>
-	</dict>
-	
-	<!-- 다크 모드 지원 -->
-	<key>UIUserInterfaceStyle</key>
-	<string>Light</string>
-	
-	<!-- iTunes 파일 공유 허용 -->
-	<key>UIFileSharingEnabled</key>
 	<true/>
 </dict>
 </plist>

@@ -53,7 +53,7 @@ class _OmokAppScreenState extends State<OmokAppScreen>
         WebViewController()
           ..setJavaScriptMode(JavaScriptMode.unrestricted)
           ..setUserAgent(
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1',
           )
           ..setNavigationDelegate(
             NavigationDelegate(
@@ -73,6 +73,14 @@ class _OmokAppScreenState extends State<OmokAppScreen>
                 });
               },
               onPageFinished: (url) async {
+                // 페이지 로드 완료 후 모바일 화면에 맞게 viewport 설정
+                await _controller.runJavaScript('''
+                  const meta = document.createElement('meta');
+                  meta.name = 'viewport';
+                  meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                  document.getElementsByTagName('head')[0].appendChild(meta);
+                ''');
+
                 // 게임 로딩 완료 시 통계 업데이트
                 if (url.contains('zep.us/@omok')) {
                   _updatePlayStats();
@@ -270,11 +278,21 @@ class _OmokAppScreenState extends State<OmokAppScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'ZEP 오목',
-          style: GoogleFonts.blackHanSans(
-            textStyle: const TextStyle(fontSize: 22),
-          ),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/image/omok_land_icon.png',
+              height: 24, // 필요에 따라 크기 조정
+              width: 24,
+            ),
+            const SizedBox(width: 8), // 이미지와 텍스트 사이 간격
+            Text(
+              '오목랜드',
+              style: GoogleFonts.blackHanSans(
+                textStyle: const TextStyle(fontSize: 22),
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
         leading:

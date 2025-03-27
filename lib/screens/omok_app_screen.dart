@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -281,7 +282,7 @@ class _OmokAppScreenState extends State<OmokAppScreen>
         title: Row(
           children: [
             Image.asset(
-              'assets/image/omok_land_icon.png',
+              'assets/images/omok_land_icon.png',
               height: 24, // 필요에 따라 크기 조정
               width: 24,
             ),
@@ -335,6 +336,42 @@ class _OmokAppScreenState extends State<OmokAppScreen>
                     ),
                   ),
                   const PopupMenuItem(
+                    value: 'guide',
+                    child: Row(
+                      children: [
+                        Icon(Icons.help_outline, color: AppColors.oceanBlue),
+                        SizedBox(width: 10),
+                        Text('게임 가이드'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'settings',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.settings_outlined,
+                          color: AppColors.oceanBlue,
+                        ),
+                        SizedBox(width: 10),
+                        Text('설정'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'privacy',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.privacy_tip_outlined,
+                          color: AppColors.oceanBlue,
+                        ),
+                        SizedBox(width: 10),
+                        Text('개인정보 처리방침'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
                     value: 'info',
                     child: Row(
                       children: [
@@ -351,9 +388,19 @@ class _OmokAppScreenState extends State<OmokAppScreen>
                   _controller.reload();
                   break;
                 case 'fullscreen':
-                  setState(() {
-                    isFullScreen = !isFullScreen;
-                  });
+                  _toggleFullScreen();
+                  break;
+                case 'guide':
+                  _showGameGuide();
+                  break;
+                case 'offline':
+                  _showOfflineGameOptions();
+                  break;
+                case 'settings':
+                  _showSettings();
+                  break;
+                case 'privacy':
+                  _showPrivacyPolicy();
                   break;
                 case 'info':
                   _showAppInfo();
@@ -577,30 +624,6 @@ class _OmokAppScreenState extends State<OmokAppScreen>
             ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: AppColors.woodBeige,
-        indicatorColor: AppColors.coralOrange.withOpacity(0.2),
-        elevation: 8,
-        selectedIndex: 0,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.grid_on_rounded), label: '오목'),
-          NavigationDestination(icon: Icon(Icons.people_rounded), label: '친구'),
-          NavigationDestination(icon: Icon(Icons.chat_rounded), label: '채팅'),
-        ],
-        onDestinationSelected: (index) {
-          switch (index) {
-            case 0:
-              // 이미 오목 화면이므로 아무것도 안함
-              break;
-            case 1:
-              Navigator.pushReplacementNamed(context, '/friends');
-              break;
-            case 2:
-              Navigator.pushReplacementNamed(context, '/chats');
-              break;
-          }
-        },
-      ),
     );
   }
 
@@ -794,5 +817,1176 @@ class _OmokAppScreenState extends State<OmokAppScreen>
         ),
       ],
     );
+  }
+
+  // 게임 가이드 표시
+  void _showGameGuide() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.woodBeige,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.earthBrown, width: 1.5),
+                  ),
+                  child: Icon(Icons.help_outline, color: AppColors.darkBrown),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '게임 가이드',
+                  style: GoogleFonts.nanumGothic(
+                    textStyle: TextStyle(
+                      color: AppColors.darkBrown,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            backgroundColor: AppColors.skyBlue,
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _guideSection(
+                    title: '오목 기본 규칙',
+                    content:
+                        '오목은 흑백 바둑돌을 이용해 5개의 돌을 가로, 세로, 대각선으로 '
+                        '연속해서 두는 사람이 이기는 게임입니다.',
+                    icon: Icons.grid_on_rounded,
+                  ),
+                  const SizedBox(height: 16),
+                  _guideSection(
+                    title: '금수 규칙',
+                    content:
+                        '흑은 쌍삼(3-3), 쌍사(4-4), 장목(6목 이상) 등의 금수가 있습니다. '
+                        '금수 자리에는 돌을 놓을 수 없습니다.',
+                    icon: Icons.cancel_outlined,
+                  ),
+                  const SizedBox(height: 16),
+                  _guideSection(
+                    title: '게임 진행',
+                    content:
+                        '흑이 먼저 시작하며, 번갈아가며 돌을 놓습니다. '
+                        '상대방의 돌을 따먹는 룰은 없습니다.',
+                    icon: Icons.play_circle_outline,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('확인'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // 가이드 섹션 위젯
+  Widget _guideSection({
+    required String title,
+    required String content,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.woodBeige,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppColors.coralOrange, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: GoogleFonts.nanumGothic(
+                  textStyle: TextStyle(
+                    color: AppColors.darkBrown,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            content,
+            style: GoogleFonts.nanumGothic(
+              textStyle: TextStyle(
+                color: AppColors.darkBrown.withOpacity(0.8),
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 오프라인 게임 옵션 표시
+  void _showOfflineGameOptions() {
+    // 현재 설정된 난이도
+    String difficulty = '보통';
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setState) => AlertDialog(
+                  title: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.woodBeige,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppColors.earthBrown,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.videogame_asset_outlined,
+                          color: AppColors.darkBrown,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '오프라인 모드',
+                        style: GoogleFonts.nanumGothic(
+                          textStyle: TextStyle(
+                            color: AppColors.darkBrown,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  backgroundColor: AppColors.skyBlue,
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.woodBeige,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              spreadRadius: 1,
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '게임 모드 선택',
+                              style: GoogleFonts.nanumGothic(
+                                textStyle: TextStyle(
+                                  color: AppColors.darkBrown,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _offlineGameMode(
+                              icon: Icons.person_outline,
+                              title: '컴퓨터와 대전',
+                              subtitle: '인공지능과 1:1로 대결합니다',
+                              onTap: () {
+                                setState(() {});
+                                _showDifficultySelection(context);
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            _offlineGameMode(
+                              icon: Icons.people_outline,
+                              title: '친구와 대전',
+                              subtitle: '한 기기에서 번갈아가며 두 명이 플레이합니다',
+                              onTap: () {
+                                Navigator.of(context).pop();
+                                _showOfflineGameBoard(mode: '2player');
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            _offlineGameMode(
+                              icon: Icons.school_outlined,
+                              title: '오목 퍼즐',
+                              subtitle: '다양한 퍼즐을 풀며 실력을 향상시킵니다',
+                              onTap: () {
+                                Navigator.of(context).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('오목 퍼즐은 다음 업데이트에서 제공됩니다'),
+                                    backgroundColor: AppColors.oceanBlue,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.woodBeige.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.earthBrown.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 18,
+                              color: AppColors.coralOrange,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '오프라인 모드에서는 게임 기록이 저장되지 않습니다',
+                                style: GoogleFonts.nanumGothic(
+                                  textStyle: TextStyle(
+                                    color: AppColors.darkBrown.withOpacity(0.8),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('닫기'),
+                    ),
+                  ],
+                ),
+          ),
+    );
+  }
+
+  // 오프라인 게임 모드 위젯
+  Widget _offlineGameMode({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: AppColors.earthBrown.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.oceanBlue.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColors.oceanBlue, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.nanumGothic(
+                      textStyle: TextStyle(
+                        color: AppColors.darkBrown,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.nanumGothic(
+                      textStyle: TextStyle(
+                        color: AppColors.darkBrown.withOpacity(0.7),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: AppColors.coralOrange,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 난이도 선택 다이얼로그
+  void _showDifficultySelection(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              '난이도 선택',
+              style: GoogleFonts.nanumGothic(
+                textStyle: TextStyle(
+                  color: AppColors.darkBrown,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            backgroundColor: AppColors.skyBlue,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _difficultyOption(
+                  context: context,
+                  level: '쉬움',
+                  description: '컴퓨터가 기본적인 실수를 합니다',
+                  color: Colors.green,
+                ),
+                const SizedBox(height: 8),
+                _difficultyOption(
+                  context: context,
+                  level: '보통',
+                  description: '일반적인 난이도입니다',
+                  color: Colors.blue,
+                ),
+                const SizedBox(height: 8),
+                _difficultyOption(
+                  context: context,
+                  level: '어려움',
+                  description: '높은 수준의 AI가 대결합니다',
+                  color: Colors.orange,
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  // 난이도 옵션 위젯
+  Widget _difficultyOption({
+    required BuildContext context,
+    required String level,
+    required String description,
+    required Color color,
+  }) {
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).pop(); // 현재 다이얼로그 닫기
+        Navigator.of(context).pop(); // 상위 다이얼로그도 닫기
+        _showOfflineGameBoard(mode: 'ai', difficulty: level);
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.woodBeige,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.5), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(color: color, width: 1.5),
+              ),
+              child: Center(child: Icon(Icons.star, color: color, size: 14)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    level,
+                    style: GoogleFonts.nanumGothic(
+                      textStyle: TextStyle(
+                        color: AppColors.darkBrown,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: GoogleFonts.nanumGothic(
+                      textStyle: TextStyle(
+                        color: AppColors.darkBrown.withOpacity(0.7),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 오프라인 게임 보드 표시
+  void _showOfflineGameBoard({required String mode, String difficulty = '보통'}) {
+    // 간단한 오프라인 게임 화면
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => OfflineGameBoard(mode: mode, difficulty: difficulty),
+    );
+  }
+
+  // 설정 화면 표시
+  void _showSettings() {
+    // 설정 옵션을 위한 상태 변수들
+    bool soundEnabled = true;
+    bool vibrationEnabled = true;
+    bool darkModeEnabled = Theme.of(context).brightness == Brightness.dark;
+    double boardSize = 15; // 기본 크기
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setState) => AlertDialog(
+                  title: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.woodBeige,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppColors.earthBrown,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.settings_outlined,
+                          color: AppColors.darkBrown,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '설정',
+                        style: GoogleFonts.nanumGothic(
+                          textStyle: TextStyle(
+                            color: AppColors.darkBrown,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  backgroundColor: AppColors.skyBlue,
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _settingItem(
+                          icon: Icons.volume_up_outlined,
+                          title: '소리',
+                          trailing: Switch(
+                            value: soundEnabled,
+                            activeColor: AppColors.coralOrange,
+                            onChanged: (value) {
+                              setState(() {
+                                soundEnabled = value;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _settingItem(
+                          icon: Icons.vibration,
+                          title: '진동',
+                          trailing: Switch(
+                            value: vibrationEnabled,
+                            activeColor: AppColors.coralOrange,
+                            onChanged: (value) {
+                              setState(() {
+                                vibrationEnabled = value;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _settingItem(
+                          icon: Icons.dark_mode_outlined,
+                          title: '다크 모드',
+                          trailing: Switch(
+                            value: darkModeEnabled,
+                            activeColor: AppColors.coralOrange,
+                            onChanged: (value) {
+                              setState(() {
+                                darkModeEnabled = value;
+                              });
+                              // 실제 앱에서는 여기서 테마 변경 처리
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('취소'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // 여기서 설정 저장 처리
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('설정이 저장되었습니다'),
+                            backgroundColor: AppColors.oceanBlue,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.coralOrange,
+                      ),
+                      child: const Text('저장'),
+                    ),
+                  ],
+                ),
+          ),
+    );
+  }
+
+  // 설정 항목 위젯
+  Widget _settingItem({
+    required IconData icon,
+    required String title,
+    required Widget trailing,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.woodBeige,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: AppColors.oceanBlue.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.oceanBlue),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              style: GoogleFonts.nanumGothic(
+                textStyle: TextStyle(
+                  color: AppColors.darkBrown,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+          trailing,
+        ],
+      ),
+    );
+  }
+
+  // 개인정보 처리방침 표시
+  void _showPrivacyPolicy() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.woodBeige,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.earthBrown, width: 1.5),
+                  ),
+                  child: Icon(
+                    Icons.privacy_tip_outlined,
+                    color: AppColors.darkBrown,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '개인정보 처리방침',
+                  style: GoogleFonts.nanumGothic(
+                    textStyle: TextStyle(
+                      color: AppColors.darkBrown,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            backgroundColor: AppColors.skyBlue,
+            content: SizedBox(
+              width: double.maxFinite,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _privacySection(
+                      title: '1. 수집하는 개인정보',
+                      content:
+                          '당사는 오목랜드 앱에서 다음과 같은 정보를 수집합니다:\n'
+                          '- 플레이 통계 (게임 횟수, 마지막 플레이 시간)\n'
+                          '- 기기 정보 (모델명, OS 버전)\n'
+                          '온라인 기능 사용 시 ZEP 서비스를 통해 추가 정보가 수집될 수 있습니다.',
+                    ),
+                    const SizedBox(height: 12),
+                    _privacySection(
+                      title: '2. 개인정보 이용 목적',
+                      content:
+                          '수집된 정보는 다음 목적으로 사용됩니다:\n'
+                          '- 서비스 품질 개선\n'
+                          '- 앱 오류 분석 및 수정\n'
+                          '- 사용자 경험 개선',
+                    ),
+                    const SizedBox(height: 12),
+                    _privacySection(
+                      title: '3. 개인정보 보유 기간',
+                      content:
+                          '수집된 정보는 서비스 이용 기간 동안 보관되며, '
+                          '앱 삭제 시 모든 로컬 데이터는 함께 삭제됩니다.',
+                    ),
+                    const SizedBox(height: 12),
+                    _privacySection(
+                      title: '4. 제3자 제공',
+                      content:
+                          '당사는 수집된 개인정보를 제3자에게 제공하지 않습니다. '
+                          '단, 법적 요청이 있는 경우는 예외입니다.',
+                    ),
+                    const SizedBox(height: 12),
+                    _privacySection(
+                      title: '5. 이용자 권리',
+                      content:
+                          '이용자는 언제든지 개인정보 삭제를 요청할 수 있으며, '
+                          '이는 앱 삭제를 통해 가능합니다.',
+                    ),
+                    const SizedBox(height: 12),
+                    _privacySection(
+                      title: '6. 문의처',
+                      content: '개인정보 관련 문의: scm1400@gmail.com',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('확인'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // 개인정보 처리방침 섹션 위젯
+  Widget _privacySection({required String title, required String content}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.nanumGothic(
+            textStyle: TextStyle(
+              color: AppColors.darkBrown,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.woodBeige.withOpacity(0.7),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            content,
+            style: GoogleFonts.nanumGothic(
+              textStyle: TextStyle(
+                color: AppColors.darkBrown.withOpacity(0.8),
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// 오프라인 게임 보드 위젯 - 클래스를 파일 맨 아래에 추가
+class OfflineGameBoard extends StatefulWidget {
+  final String mode;
+  final String difficulty;
+
+  const OfflineGameBoard({
+    super.key,
+    required this.mode,
+    required this.difficulty,
+  });
+
+  @override
+  State<OfflineGameBoard> createState() => _OfflineGameBoardState();
+}
+
+class _OfflineGameBoardState extends State<OfflineGameBoard> {
+  static const int boardSize = 9; // 9x9 간단한 오목판
+  List<List<int>> board = List.generate(
+    boardSize,
+    (_) => List.filled(boardSize, 0),
+  );
+  int currentPlayer = 1; // 1: 흑, 2: 백
+  bool gameOver = false;
+  String gameResult = '';
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder:
+          (context, scrollController) => Container(
+            decoration: BoxDecoration(
+              color: AppColors.skyBlue,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Column(
+              children: [
+                // 드래그 핸들
+                Container(
+                  margin: const EdgeInsets.only(top: 10),
+                  width: 40,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2.5),
+                  ),
+                ),
+                // 게임 정보
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        widget.mode == 'ai'
+                            ? '컴퓨터 대전 (${widget.difficulty})'
+                            : '친구와 대전',
+                        style: GoogleFonts.nanumGothic(
+                          textStyle: TextStyle(
+                            color: AppColors.darkBrown,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          if (!gameOver)
+                            Text(
+                              '${currentPlayer == 1 ? '흑' : '백'} 차례',
+                              style: GoogleFonts.nanumGothic(
+                                textStyle: TextStyle(
+                                  color:
+                                      currentPlayer == 1
+                                          ? AppColors.charcoal
+                                          : AppColors.darkBrown,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          if (gameOver)
+                            Text(
+                              gameResult,
+                              style: GoogleFonts.nanumGothic(
+                                textStyle: TextStyle(
+                                  color: AppColors.coralOrange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: Icon(
+                              Icons.refresh_rounded,
+                              color: AppColors.oceanBlue,
+                            ),
+                            onPressed: _resetGame,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // 게임 보드
+                Expanded(
+                  child: Center(
+                    child: AspectRatio(
+                      aspectRatio: 1.0,
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.woodBeige,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              spreadRadius: 1,
+                              blurRadius: 5,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: GridView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: boardSize,
+                                ),
+                            itemCount: boardSize * boardSize,
+                            itemBuilder: (context, index) {
+                              final row = index ~/ boardSize;
+                              final col = index % boardSize;
+                              return GestureDetector(
+                                onTap:
+                                    () =>
+                                        gameOver ? null : _placePiece(row, col),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: AppColors.earthBrown.withOpacity(
+                                        0.5,
+                                      ),
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: _buildPiece(board[row][col]),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // 하단 버튼
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.oceanBlue,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text(
+                            '닫기',
+                            style: GoogleFonts.nanumGothic(
+                              textStyle: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _resetGame,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.coralOrange,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text(
+                            '다시 시작',
+                            style: GoogleFonts.nanumGothic(
+                              textStyle: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  // 오목돌 그리기
+  Widget _buildPiece(int player) {
+    if (player == 0) {
+      return Container();
+    }
+
+    return Center(
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: player == 1 ? AppColors.charcoal : Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ],
+          border:
+              player == 2
+                  ? Border.all(color: Colors.black.withOpacity(0.1), width: 1)
+                  : null,
+        ),
+      ),
+    );
+  }
+
+  // 오목돌 놓기
+  void _placePiece(int row, int col) {
+    if (board[row][col] != 0 || gameOver) {
+      return;
+    }
+
+    setState(() {
+      board[row][col] = currentPlayer;
+
+      // 승리 체크
+      if (_checkWin(row, col)) {
+        gameOver = true;
+        gameResult = '${currentPlayer == 1 ? '흑' : '백'} 승리!';
+        return;
+      }
+
+      // 플레이어 전환
+      currentPlayer = currentPlayer == 1 ? 2 : 1;
+
+      // AI 모드인 경우 컴퓨터 턴
+      if (widget.mode == 'ai' && currentPlayer == 2 && !gameOver) {
+        _computerMove();
+      }
+    });
+  }
+
+  // 승리 조건 체크
+  bool _checkWin(int row, int col) {
+    final player = board[row][col];
+
+    // 가로 방향 체크
+    int count = 0;
+    for (int c = 0; c < boardSize; c++) {
+      if (board[row][c] == player) {
+        count++;
+        if (count >= 5) return true;
+      } else {
+        count = 0;
+      }
+    }
+
+    // 세로 방향 체크
+    count = 0;
+    for (int r = 0; r < boardSize; r++) {
+      if (board[r][col] == player) {
+        count++;
+        if (count >= 5) return true;
+      } else {
+        count = 0;
+      }
+    }
+
+    // 대각선 방향 (우하향) 체크
+    count = 0;
+    int startRow = row - min(row, col);
+    int startCol = col - min(row, col);
+    while (startRow < boardSize && startCol < boardSize) {
+      if (board[startRow][startCol] == player) {
+        count++;
+        if (count >= 5) return true;
+      } else {
+        count = 0;
+      }
+      startRow++;
+      startCol++;
+    }
+
+    // 대각선 방향 (좌하향) 체크
+    count = 0;
+    startRow = row - min(row, boardSize - 1 - col);
+    startCol = col + min(row, boardSize - 1 - col);
+    while (startRow < boardSize && startCol >= 0) {
+      if (board[startRow][startCol] == player) {
+        count++;
+        if (count >= 5) return true;
+      } else {
+        count = 0;
+      }
+      startRow++;
+      startCol--;
+    }
+
+    return false;
+  }
+
+  // 컴퓨터 이동 (간단한 AI)
+  void _computerMove() {
+    // 간단한 AI: 2초 후 랜덤 위치에 놓음
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (gameOver) return;
+
+      // 빈 셀 찾기
+      List<List<int>> emptyCells = [];
+      for (int i = 0; i < boardSize; i++) {
+        for (int j = 0; j < boardSize; j++) {
+          if (board[i][j] == 0) {
+            emptyCells.add([i, j]);
+          }
+        }
+      }
+
+      if (emptyCells.isEmpty) {
+        setState(() {
+          gameOver = true;
+          gameResult = '무승부!';
+        });
+        return;
+      }
+
+      // 랜덤 위치 선택
+      final random = Random();
+      final selectedCell = emptyCells[random.nextInt(emptyCells.length)];
+
+      _placePiece(selectedCell[0], selectedCell[1]);
+    });
+  }
+
+  // 게임 재시작
+  void _resetGame() {
+    setState(() {
+      board = List.generate(boardSize, (_) => List.filled(boardSize, 0));
+      currentPlayer = 1;
+      gameOver = false;
+      gameResult = '';
+    });
   }
 }

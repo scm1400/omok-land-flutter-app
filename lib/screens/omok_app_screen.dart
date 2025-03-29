@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -33,7 +34,7 @@ class _OmokAppScreenState extends State<OmokAppScreen>
   bool hasRatedApp = false;
 
   // 오목 앱 URL
-  final String omokUrl = 'https://zep.us/@omok';
+  final String omokUrl = 'https://zep.us/@omok/DEmNql?customData={"app":true}';
 
   // 사용자 통계 저장 키
   static const String _keyPlayCount = 'play_count';
@@ -56,15 +57,24 @@ class _OmokAppScreenState extends State<OmokAppScreen>
           ..setUserAgent(
             'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1',
           )
+          // 구글 로그인 처리를 위한 WebView 설정
+          ..setBackgroundColor(Colors.transparent)
+          ..enableZoom(false)
+          // 웹 페이지 로드 전 CSP 헤더를 처리
           ..setNavigationDelegate(
             NavigationDelegate(
               onNavigationRequest: (request) {
-                // 오목 게임 URL이 아닌 경우 외부 브라우저로 열기
-                if (!request.url.contains('zep.us/@omok')) {
-                  _launchInBrowser(request.url);
-                  return NavigationDecision.prevent;
+                // 구글 로그인 URL 허용
+                if (request.url.contains('accounts.google.com') ||
+                    request.url.contains('googleapis.com') ||
+                    request.url.contains('google.com') ||
+                    request.url.contains('zep.us/@omok')) {
+                  return NavigationDecision.navigate;
                 }
-                return NavigationDecision.navigate;
+
+                // 그 외 URL은 외부 브라우저로 열기
+                _launchInBrowser(request.url);
+                return NavigationDecision.prevent;
               },
               onPageStarted: (url) {
                 setState(() {
@@ -72,14 +82,82 @@ class _OmokAppScreenState extends State<OmokAppScreen>
                   hasError = false;
                   isOffline = false;
                 });
+
+                // 페이지 로드 직후 CSP 관련 처리
+                _controller.runJavaScript('''
+                  // 기존 CSP 메타 태그를 통째로 제거
+                  document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]').forEach(function(el) {
+                    el.parentNode.removeChild(el);
+                  });
+                ''');
               },
               onPageFinished: (url) async {
-                // 페이지 로드 완료 후 모바일 화면에 맞게 viewport 설정
+                // CSP 헤더를 완전히 재설정
                 await _controller.runJavaScript('''
-                  const meta = document.createElement('meta');
-                  meta.name = 'viewport';
-                  meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-                  document.getElementsByTagName('head')[0].appendChild(meta);
+                  try {
+                    // 모든 CSP 메타 태그 제거
+                    document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]').forEach(function(el) {
+                      el.parentNode.removeChild(el);
+                    });
+                    
+                    // 새로운 CSP 메타 태그 추가 - about:blank 명시적 허용
+                    const meta = document.createElement('meta');
+                    meta.httpEquiv = 'Content-Security-Policy';
+                    meta.content = "default-src * 'unsafe-inline' 'unsafe-eval' data: blob: about: about:blank; media-src * data: blob: about: about:blank; img-src * data: blob: about: about:blank; script-src * 'unsafe-inline' 'unsafe-eval' data: blob: about: about:blank; style-src * 'unsafe-inline' data: blob: about: about:blank; frame-src * data: blob: about: about:blank; connect-src * data: blob: about: about:blank;";
+                    document.head.insertBefore(meta, document.head.firstChild);
+                    
+                    // viewport 설정
+                    const viewport = document.createElement('meta');
+                    viewport.name = 'viewport';
+                    viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                    document.head.appendChild(viewport);
+                    
+                    // 로그인 팝업 처리 - about:blank 팝업을 새 창으로 열지 않도록 설정
+                    window.open = function(url, target, features) {
+                      if (url === 'about:blank') {
+                        location.href = url;
+                        return null;
+                      }
+                      return window.originalOpen ? window.originalOpen(url, '_self', features) : null;
+                    };
+                    
+                    if (!window.originalOpen) {
+                      window.originalOpen = window.open;
+                    }
+                    
+                    // 구글 로그인 버튼 처리 - 모든 클릭 이벤트 후킹
+                    document.addEventListener('click', function(e) {
+                      const target = e.target;
+                      // 구글 로그인 버튼 찾기 시도
+                      const button = target.closest('button') || target.closest('a');
+                      if (button && (
+                          button.textContent.includes('Google') || 
+                          button.innerHTML.includes('Google') || 
+                          button.getAttribute('aria-label')?.includes('Google')
+                      )) {
+                        console.log('구글 로그인 버튼 클릭 감지');
+                        // 기본 동작 실행 (CSP 무시)
+                        setTimeout(function() {
+                          try {
+                            // 모든 CSP 제거 다시 시도 
+                            document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]').forEach(function(el) {
+                              el.parentNode.removeChild(el);
+                            });
+                          } catch(err) {
+                            console.error('로그인 처리 중 오류:', err);
+                          }
+                        }, 10);
+                      }
+                    }, true);
+                    
+                    // about:blank 링크 직접 처리
+                    document.querySelectorAll('a[target="_blank"]').forEach(function(link) {
+                      link.removeAttribute('target');
+                      link.setAttribute('target', '_self');
+                    });
+                  } catch (e) {
+                    console.error('CSP 설정 중 오류:', e);
+                  }
                 ''');
 
                 // 게임 로딩 완료 시 통계 업데이트
@@ -123,7 +201,8 @@ class _OmokAppScreenState extends State<OmokAppScreen>
             'OmokApp',
             onMessageReceived: (JavaScriptMessage message) {
               // 웹 -> Flutter 통신
-              _handleJsMessage(message.message);
+              var data = jsonDecode(message.message);
+              _handleJsMessage(data);
             },
           )
           ..loadRequest(Uri.parse(omokUrl));
@@ -158,27 +237,27 @@ class _OmokAppScreenState extends State<OmokAppScreen>
   }
 
   // 웹 페이지로부터 메시지 처리
-  void _handleJsMessage(String message) {
-    if (message.startsWith('win:')) {
-      // 이긴 경우 축하 메시지
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('축하합니다! 게임에서 승리했습니다!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else if (message.startsWith('lose:')) {
-      // 진 경우 위로 메시지
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('아쉽네요. 다음에 다시 도전해보세요!'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-    } else if (message.startsWith('share:')) {
+  void _handleJsMessage(Map<String, dynamic> data) {
+    var type = data['type'];
+    if (type == 'share') {
       // 게임 공유
-      final shareUrl = message.substring(6);
+      final shareUrl = data['url'];
       _shareGame(shareUrl);
+    } else if (type == 'test') {
+      // 테스트 메시지
+      final message = data['message'];
+      AlertDialog(
+        title: Text('테스트 메시지'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // 다이얼로그 닫기
+            },
+            child: Text('확인'),
+          ),
+        ],
+      );
     }
   }
 

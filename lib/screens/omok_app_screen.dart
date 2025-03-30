@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,8 +32,11 @@ class _OmokAppScreenState extends State<OmokAppScreen>
   int playCount = 0;
   bool hasRatedApp = false;
 
+  var customData = {'app': true};
+
   // 오목 앱 URL
-  final String omokUrl = 'https://zep.us/@omok/DEmNql?customData={"app":true}';
+  late final String omokUrl =
+      'https://zep.us/@omok/DEmNql?customData=${jsonEncode(customData)}';
 
   // 사용자 통계 저장 키
   static const String _keyPlayCount = 'play_count';
@@ -67,8 +69,21 @@ class _OmokAppScreenState extends State<OmokAppScreen>
                 // 구글 로그인 URL 허용
                 if (request.url.contains('accounts.google.com') ||
                     request.url.contains('googleapis.com') ||
-                    request.url.contains('google.com') ||
-                    request.url.contains('zep.us/@omok')) {
+                    request.url.contains('google.com')) {
+                  return NavigationDecision.navigate;
+                }
+
+                // zep.us/@omok 링크에 항상 customData 추가
+                if (request.url.contains('zep.us/@omok')) {
+                  // 이미 customData가 있는지 확인
+                  if (!request.url.contains('customData=')) {
+                    // URL에 쿼리 파라미터가 이미 있는지 확인
+                    String separator = request.url.contains('?') ? '&' : '?';
+                    String newUrl =
+                        '${request.url}${separator}customData=${jsonEncode(customData)}';
+                    _controller.loadRequest(Uri.parse(newUrl));
+                    return NavigationDecision.prevent;
+                  }
                   return NavigationDecision.navigate;
                 }
 
@@ -227,12 +242,34 @@ class _OmokAppScreenState extends State<OmokAppScreen>
         setState(() {
           isOffline = false;
         });
-        _controller.reload();
+        _reloadWithCustomData();
       }
     } on SocketException catch (_) {
       setState(() {
         isOffline = true;
       });
+    }
+  }
+
+  // customData와 함께 페이지 다시 로드
+  Future<void> _reloadWithCustomData() async {
+    // 현재 URL 가져오기
+    String? currentUrl = await _controller.currentUrl();
+
+    if (currentUrl != null && currentUrl.contains('zep.us/@omok')) {
+      // customData가 이미 있는지 확인하고 없으면 추가
+      if (!currentUrl.contains('customData=')) {
+        String separator = currentUrl.contains('?') ? '&' : '?';
+        String newUrl =
+            '$currentUrl${separator}customData=${jsonEncode(customData)}';
+        _controller.loadRequest(Uri.parse(newUrl));
+      } else {
+        // customData가 이미 있으면 기존 URL로 다시 로드
+        _controller.loadRequest(Uri.parse(currentUrl));
+      }
+    } else {
+      // 오목 URL이 아니면 그냥 다시 로드
+      _controller.reload();
     }
   }
 
@@ -464,7 +501,7 @@ class _OmokAppScreenState extends State<OmokAppScreen>
             onSelected: (value) {
               switch (value) {
                 case 'reload':
-                  _controller.reload();
+                  _reloadWithCustomData();
                   break;
                 case 'fullscreen':
                   _toggleFullScreen();
@@ -683,7 +720,7 @@ class _OmokAppScreenState extends State<OmokAppScreen>
                           const SizedBox(height: 24),
                           ElevatedButton.icon(
                             onPressed: () {
-                              _controller.reload();
+                              _reloadWithCustomData();
                             },
                             icon: const Icon(Icons.refresh_rounded),
                             label: const Text('다시 시도'),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as logger;
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -72,21 +73,29 @@ class _OmokAppScreenState extends State<OmokAppScreen>
                     request.url.contains('google.com')) {
                   return NavigationDecision.navigate;
                 }
-
+                logger.log('request.url2: $request.url');
                 // zep.us/@omok 링크에 항상 customData 추가
                 if (request.url.contains('zep.us/@omok')) {
-                  // 이미 customData가 있는지 확인
-                  if (!request.url.contains('customData=')) {
-                    // URL에 쿼리 파라미터가 이미 있는지 확인
-                    String separator = request.url.contains('?') ? '&' : '?';
-                    String newUrl =
-                        '${request.url}${separator}customData=${jsonEncode(customData)}';
-                    _controller.loadRequest(Uri.parse(newUrl));
-                    return NavigationDecision.prevent;
+                  // 이미 customData가 있으면 그대로 이동
+                  if (request.url.contains('customData=')) {
+                    return NavigationDecision.navigate;
                   }
-                  return NavigationDecision.navigate;
+
+                  // customData가 없으면 추가하고 수동으로 로드
+                  String separator = request.url.contains('?') ? '&' : '?';
+                  String newUrl =
+                      '${request.url}${separator}customData=${jsonEncode(customData)}';
+                  // loadRequest 호출로 인한 무한 재귀를 방지하기 위해
+                  // Future.microtask를 사용하여 다음 이벤트 루프에서 로드
+                  Future.microtask(() {
+                    _controller.loadRequest(Uri.parse(newUrl));
+                  });
+
+                  // 현재 탐색은 방지
+                  return NavigationDecision.prevent;
                 }
 
+                logger.log('request.url: ${request.url}');
                 // 그 외 URL은 외부 브라우저로 열기
                 _launchInBrowser(request.url);
                 return NavigationDecision.prevent;
@@ -99,81 +108,81 @@ class _OmokAppScreenState extends State<OmokAppScreen>
                 });
 
                 // 페이지 로드 직후 CSP 관련 처리
-                _controller.runJavaScript('''
-                  // 기존 CSP 메타 태그를 통째로 제거
-                  document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]').forEach(function(el) {
-                    el.parentNode.removeChild(el);
-                  });
-                ''');
+                // _controller.runJavaScript('''
+                //   // 기존 CSP 메타 태그를 통째로 제거
+                //   document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]').forEach(function(el) {
+                //     el.parentNode.removeChild(el);
+                //   });
+                // ''');
               },
               onPageFinished: (url) async {
                 // CSP 헤더를 완전히 재설정
-                await _controller.runJavaScript('''
-                  try {
-                    // 모든 CSP 메타 태그 제거
-                    document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]').forEach(function(el) {
-                      el.parentNode.removeChild(el);
-                    });
-                    
-                    // 새로운 CSP 메타 태그 추가 - about:blank 명시적 허용
-                    const meta = document.createElement('meta');
-                    meta.httpEquiv = 'Content-Security-Policy';
-                    meta.content = "default-src * 'unsafe-inline' 'unsafe-eval' data: blob: about: about:blank; media-src * data: blob: about: about:blank; img-src * data: blob: about: about:blank; script-src * 'unsafe-inline' 'unsafe-eval' data: blob: about: about:blank; style-src * 'unsafe-inline' data: blob: about: about:blank; frame-src * data: blob: about: about:blank; connect-src * data: blob: about: about:blank;";
-                    document.head.insertBefore(meta, document.head.firstChild);
-                    
-                    // viewport 설정
-                    const viewport = document.createElement('meta');
-                    viewport.name = 'viewport';
-                    viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-                    document.head.appendChild(viewport);
-                    
-                    // 로그인 팝업 처리 - about:blank 팝업을 새 창으로 열지 않도록 설정
-                    window.open = function(url, target, features) {
-                      if (url === 'about:blank') {
-                        location.href = url;
-                        return null;
-                      }
-                      return window.originalOpen ? window.originalOpen(url, '_self', features) : null;
-                    };
-                    
-                    if (!window.originalOpen) {
-                      window.originalOpen = window.open;
-                    }
-                    
-                    // 구글 로그인 버튼 처리 - 모든 클릭 이벤트 후킹
-                    document.addEventListener('click', function(e) {
-                      const target = e.target;
-                      // 구글 로그인 버튼 찾기 시도
-                      const button = target.closest('button') || target.closest('a');
-                      if (button && (
-                          button.textContent.includes('Google') || 
-                          button.innerHTML.includes('Google') || 
-                          button.getAttribute('aria-label')?.includes('Google')
-                      )) {
-                        console.log('구글 로그인 버튼 클릭 감지');
-                        // 기본 동작 실행 (CSP 무시)
-                        setTimeout(function() {
-                          try {
-                            // 모든 CSP 제거 다시 시도 
-                            document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]').forEach(function(el) {
-                              el.parentNode.removeChild(el);
-                            });
-                          } catch(err) {
-                            console.error('로그인 처리 중 오류:', err);
-                          }
-                        }, 10);
-                      }
-                    }, true);
-                    
-                    // about:blank 링크 직접 처리
-                    document.querySelectorAll('a[target="_blank"]').forEach(function(link) {
-                      link.removeAttribute('target');
-                      link.setAttribute('target', '_self');
-                    });
-                  } catch (e) {
-                    console.error('CSP 설정 중 오류:', e);
-                  }
-                ''');
+                // await _controller.runJavaScript('''
+                //   try {
+                //     // 모든 CSP 메타 태그 제거
+                //     document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]').forEach(function(el) {
+                //       el.parentNode.removeChild(el);
+                //     });
+
+                //     // 새로운 CSP 메타 태그 추가 - about:blank 명시적 허용
+                //     const meta = document.createElement('meta');
+                //     meta.httpEquiv = 'Content-Security-Policy';
+                //     meta.content = "default-src * 'unsafe-inline' 'unsafe-eval' data: blob: about: about:blank; media-src * data: blob: about: about:blank; img-src * data: blob: about: about:blank; script-src * 'unsafe-inline' 'unsafe-eval' data: blob: about: about:blank; style-src * 'unsafe-inline' data: blob: about: about:blank; frame-src * data: blob: about: about:blank; connect-src * data: blob: about: about:blank;";
+                //     document.head.insertBefore(meta, document.head.firstChild);
+
+                //     // viewport 설정
+                //     const viewport = document.createElement('meta');
+                //     viewport.name = 'viewport';
+                //     viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                //     document.head.appendChild(viewport);
+
+                //     // 로그인 팝업 처리 - about:blank 팝업을 새 창으로 열지 않도록 설정
+                //     window.open = function(url, target, features) {
+                //       if (url === 'about:blank') {
+                //         location.href = url;
+                //         return null;
+                //       }
+                //       return window.originalOpen ? window.originalOpen(url, '_self', features) : null;
+                //     };
+
+                //     if (!window.originalOpen) {
+                //       window.originalOpen = window.open;
+                //     }
+
+                //     // 구글 로그인 버튼 처리 - 모든 클릭 이벤트 후킹
+                //     document.addEventListener('click', function(e) {
+                //       const target = e.target;
+                //       // 구글 로그인 버튼 찾기 시도
+                //       const button = target.closest('button') || target.closest('a');
+                //       if (button && (
+                //           button.textContent.includes('Google') ||
+                //           button.innerHTML.includes('Google') ||
+                //           button.getAttribute('aria-label')?.includes('Google')
+                //       )) {
+                //         console.log('구글 로그인 버튼 클릭 감지');
+                //         // 기본 동작 실행 (CSP 무시)
+                //         setTimeout(function() {
+                //           try {
+                //             // 모든 CSP 제거 다시 시도
+                //             document.querySelectorAll('meta[http-equiv="Content-Security-Policy"]').forEach(function(el) {
+                //               el.parentNode.removeChild(el);
+                //             });
+                //           } catch(err) {
+                //             console.error('로그인 처리 중 오류:', err);
+                //           }
+                //         }, 10);
+                //       }
+                //     }, true);
+
+                //     // about:blank 링크 직접 처리
+                //     document.querySelectorAll('a[target="_blank"]').forEach(function(link) {
+                //       link.removeAttribute('target');
+                //       link.setAttribute('target', '_self');
+                //     });
+                //   } catch (e) {
+                //     console.error('CSP 설정 중 오류:', e);
+                //   }
+                // ''');
 
                 // 게임 로딩 완료 시 통계 업데이트
                 if (url.contains('zep.us/@omok')) {
@@ -262,14 +271,14 @@ class _OmokAppScreenState extends State<OmokAppScreen>
         String separator = currentUrl.contains('?') ? '&' : '?';
         String newUrl =
             '$currentUrl${separator}customData=${jsonEncode(customData)}';
-        _controller.loadRequest(Uri.parse(newUrl));
+        await _controller.loadRequest(Uri.parse(newUrl));
       } else {
-        // customData가 이미 있으면 기존 URL로 다시 로드
-        _controller.loadRequest(Uri.parse(currentUrl));
+        // customData가 이미 있으면 기존 방식의 reload() 사용
+        await _controller.reload();
       }
     } else {
       // 오목 URL이 아니면 그냥 다시 로드
-      _controller.reload();
+      await _controller.reload();
     }
   }
 
@@ -508,9 +517,6 @@ class _OmokAppScreenState extends State<OmokAppScreen>
                   break;
                 case 'guide':
                   _showGameGuide();
-                  break;
-                case 'offline':
-                  _showOfflineGameOptions();
                   break;
                 case 'settings':
                   _showSettings();
@@ -1066,362 +1072,6 @@ class _OmokAppScreenState extends State<OmokAppScreen>
     );
   }
 
-  // 오프라인 게임 옵션 표시
-  void _showOfflineGameOptions() {
-    // 현재 설정된 난이도
-    String difficulty = '보통';
-
-    showDialog(
-      context: context,
-      builder:
-          (context) => StatefulBuilder(
-            builder:
-                (context, setState) => AlertDialog(
-                  title: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.woodBeige,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: AppColors.earthBrown,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.videogame_asset_outlined,
-                          color: AppColors.darkBrown,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        '오프라인 모드',
-                        style: GoogleFonts.nanumGothic(
-                          textStyle: TextStyle(
-                            color: AppColors.darkBrown,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  backgroundColor: AppColors.skyBlue,
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.woodBeige,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              spreadRadius: 1,
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '게임 모드 선택',
-                              style: GoogleFonts.nanumGothic(
-                                textStyle: TextStyle(
-                                  color: AppColors.darkBrown,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _offlineGameMode(
-                              icon: Icons.person_outline,
-                              title: '컴퓨터와 대전',
-                              subtitle: '인공지능과 1:1로 대결합니다',
-                              onTap: () {
-                                setState(() {});
-                                _showDifficultySelection(context);
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                            _offlineGameMode(
-                              icon: Icons.people_outline,
-                              title: '친구와 대전',
-                              subtitle: '한 기기에서 번갈아가며 두 명이 플레이합니다',
-                              onTap: () {
-                                Navigator.of(context).pop();
-                                _showOfflineGameBoard(mode: '2player');
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                            _offlineGameMode(
-                              icon: Icons.school_outlined,
-                              title: '오목 퍼즐',
-                              subtitle: '다양한 퍼즐을 풀며 실력을 향상시킵니다',
-                              onTap: () {
-                                Navigator.of(context).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('오목 퍼즐은 다음 업데이트에서 제공됩니다'),
-                                    backgroundColor: AppColors.oceanBlue,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.woodBeige.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppColors.earthBrown.withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              size: 18,
-                              color: AppColors.coralOrange,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '오프라인 모드에서는 게임 기록이 저장되지 않습니다',
-                                style: GoogleFonts.nanumGothic(
-                                  textStyle: TextStyle(
-                                    color: AppColors.darkBrown.withOpacity(0.8),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('닫기'),
-                    ),
-                  ],
-                ),
-          ),
-    );
-  }
-
-  // 오프라인 게임 모드 위젯
-  Widget _offlineGameMode({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.6),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: AppColors.earthBrown.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.oceanBlue.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: AppColors.oceanBlue, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.nanumGothic(
-                      textStyle: TextStyle(
-                        color: AppColors.darkBrown,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.nanumGothic(
-                      textStyle: TextStyle(
-                        color: AppColors.darkBrown.withOpacity(0.7),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: AppColors.coralOrange,
-              size: 16,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 난이도 선택 다이얼로그
-  void _showDifficultySelection(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(
-              '난이도 선택',
-              style: GoogleFonts.nanumGothic(
-                textStyle: TextStyle(
-                  color: AppColors.darkBrown,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            backgroundColor: AppColors.skyBlue,
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _difficultyOption(
-                  context: context,
-                  level: '쉬움',
-                  description: '컴퓨터가 기본적인 실수를 합니다',
-                  color: Colors.green,
-                ),
-                const SizedBox(height: 8),
-                _difficultyOption(
-                  context: context,
-                  level: '보통',
-                  description: '일반적인 난이도입니다',
-                  color: Colors.blue,
-                ),
-                const SizedBox(height: 8),
-                _difficultyOption(
-                  context: context,
-                  level: '어려움',
-                  description: '높은 수준의 AI가 대결합니다',
-                  color: Colors.orange,
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  // 난이도 옵션 위젯
-  Widget _difficultyOption({
-    required BuildContext context,
-    required String level,
-    required String description,
-    required Color color,
-  }) {
-    return InkWell(
-      onTap: () {
-        Navigator.of(context).pop(); // 현재 다이얼로그 닫기
-        Navigator.of(context).pop(); // 상위 다이얼로그도 닫기
-        _showOfflineGameBoard(mode: 'ai', difficulty: level);
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.woodBeige,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.5), width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                shape: BoxShape.circle,
-                border: Border.all(color: color, width: 1.5),
-              ),
-              child: Center(child: Icon(Icons.star, color: color, size: 14)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    level,
-                    style: GoogleFonts.nanumGothic(
-                      textStyle: TextStyle(
-                        color: AppColors.darkBrown,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    description,
-                    style: GoogleFonts.nanumGothic(
-                      textStyle: TextStyle(
-                        color: AppColors.darkBrown.withOpacity(0.7),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 오프라인 게임 보드 표시
-  void _showOfflineGameBoard({required String mode, String difficulty = '보통'}) {
-    // 간단한 오프라인 게임 화면
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => OfflineGameBoard(mode: mode, difficulty: difficulty),
-    );
-  }
-
   // 설정 화면 표시
   void _showSettings() {
     // 설정 옵션을 위한 상태 변수들
@@ -1728,381 +1378,5 @@ class _OmokAppScreenState extends State<OmokAppScreen>
         ),
       ],
     );
-  }
-}
-
-// 오프라인 게임 보드 위젯 - 클래스를 파일 맨 아래에 추가
-class OfflineGameBoard extends StatefulWidget {
-  final String mode;
-  final String difficulty;
-
-  const OfflineGameBoard({
-    super.key,
-    required this.mode,
-    required this.difficulty,
-  });
-
-  @override
-  State<OfflineGameBoard> createState() => _OfflineGameBoardState();
-}
-
-class _OfflineGameBoardState extends State<OfflineGameBoard> {
-  static const int boardSize = 9; // 9x9 간단한 오목판
-  List<List<int>> board = List.generate(
-    boardSize,
-    (_) => List.filled(boardSize, 0),
-  );
-  int currentPlayer = 1; // 1: 흑, 2: 백
-  bool gameOver = false;
-  String gameResult = '';
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.9,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      builder:
-          (context, scrollController) => Container(
-            decoration: BoxDecoration(
-              color: AppColors.skyBlue,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            child: Column(
-              children: [
-                // 드래그 핸들
-                Container(
-                  margin: const EdgeInsets.only(top: 10),
-                  width: 40,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2.5),
-                  ),
-                ),
-                // 게임 정보
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        widget.mode == 'ai'
-                            ? '컴퓨터 대전 (${widget.difficulty})'
-                            : '친구와 대전',
-                        style: GoogleFonts.nanumGothic(
-                          textStyle: TextStyle(
-                            color: AppColors.darkBrown,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          if (!gameOver)
-                            Text(
-                              '${currentPlayer == 1 ? '흑' : '백'} 차례',
-                              style: GoogleFonts.nanumGothic(
-                                textStyle: TextStyle(
-                                  color:
-                                      currentPlayer == 1
-                                          ? AppColors.charcoal
-                                          : AppColors.darkBrown,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          if (gameOver)
-                            Text(
-                              gameResult,
-                              style: GoogleFonts.nanumGothic(
-                                textStyle: TextStyle(
-                                  color: AppColors.coralOrange,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: Icon(
-                              Icons.refresh_rounded,
-                              color: AppColors.oceanBlue,
-                            ),
-                            onPressed: _resetGame,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // 게임 보드
-                Expanded(
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: 1.0,
-                      child: Container(
-                        margin: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.woodBeige,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              spreadRadius: 1,
-                              blurRadius: 5,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: GridView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: boardSize,
-                                ),
-                            itemCount: boardSize * boardSize,
-                            itemBuilder: (context, index) {
-                              final row = index ~/ boardSize;
-                              final col = index % boardSize;
-                              return GestureDetector(
-                                onTap:
-                                    () =>
-                                        gameOver ? null : _placePiece(row, col),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: AppColors.earthBrown.withOpacity(
-                                        0.5,
-                                      ),
-                                      width: 0.5,
-                                    ),
-                                  ),
-                                  child: _buildPiece(board[row][col]),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // 하단 버튼
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 20,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.oceanBlue,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: Text(
-                            '닫기',
-                            style: GoogleFonts.nanumGothic(
-                              textStyle: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _resetGame,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.coralOrange,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                          child: Text(
-                            '다시 시작',
-                            style: GoogleFonts.nanumGothic(
-                              textStyle: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  // 오목돌 그리기
-  Widget _buildPiece(int player) {
-    if (player == 0) {
-      return Container();
-    }
-
-    return Center(
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: player == 1 ? AppColors.charcoal : Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
-            ),
-          ],
-          border:
-              player == 2
-                  ? Border.all(color: Colors.black.withOpacity(0.1), width: 1)
-                  : null,
-        ),
-      ),
-    );
-  }
-
-  // 오목돌 놓기
-  void _placePiece(int row, int col) {
-    if (board[row][col] != 0 || gameOver) {
-      return;
-    }
-
-    setState(() {
-      board[row][col] = currentPlayer;
-
-      // 승리 체크
-      if (_checkWin(row, col)) {
-        gameOver = true;
-        gameResult = '${currentPlayer == 1 ? '흑' : '백'} 승리!';
-        return;
-      }
-
-      // 플레이어 전환
-      currentPlayer = currentPlayer == 1 ? 2 : 1;
-
-      // AI 모드인 경우 컴퓨터 턴
-      if (widget.mode == 'ai' && currentPlayer == 2 && !gameOver) {
-        _computerMove();
-      }
-    });
-  }
-
-  // 승리 조건 체크
-  bool _checkWin(int row, int col) {
-    final player = board[row][col];
-
-    // 가로 방향 체크
-    int count = 0;
-    for (int c = 0; c < boardSize; c++) {
-      if (board[row][c] == player) {
-        count++;
-        if (count >= 5) return true;
-      } else {
-        count = 0;
-      }
-    }
-
-    // 세로 방향 체크
-    count = 0;
-    for (int r = 0; r < boardSize; r++) {
-      if (board[r][col] == player) {
-        count++;
-        if (count >= 5) return true;
-      } else {
-        count = 0;
-      }
-    }
-
-    // 대각선 방향 (우하향) 체크
-    count = 0;
-    int startRow = row - min(row, col);
-    int startCol = col - min(row, col);
-    while (startRow < boardSize && startCol < boardSize) {
-      if (board[startRow][startCol] == player) {
-        count++;
-        if (count >= 5) return true;
-      } else {
-        count = 0;
-      }
-      startRow++;
-      startCol++;
-    }
-
-    // 대각선 방향 (좌하향) 체크
-    count = 0;
-    startRow = row - min(row, boardSize - 1 - col);
-    startCol = col + min(row, boardSize - 1 - col);
-    while (startRow < boardSize && startCol >= 0) {
-      if (board[startRow][startCol] == player) {
-        count++;
-        if (count >= 5) return true;
-      } else {
-        count = 0;
-      }
-      startRow++;
-      startCol--;
-    }
-
-    return false;
-  }
-
-  // 컴퓨터 이동 (간단한 AI)
-  void _computerMove() {
-    // 간단한 AI: 2초 후 랜덤 위치에 놓음
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (gameOver) return;
-
-      // 빈 셀 찾기
-      List<List<int>> emptyCells = [];
-      for (int i = 0; i < boardSize; i++) {
-        for (int j = 0; j < boardSize; j++) {
-          if (board[i][j] == 0) {
-            emptyCells.add([i, j]);
-          }
-        }
-      }
-
-      if (emptyCells.isEmpty) {
-        setState(() {
-          gameOver = true;
-          gameResult = '무승부!';
-        });
-        return;
-      }
-
-      // 랜덤 위치 선택
-      final random = Random();
-      final selectedCell = emptyCells[random.nextInt(emptyCells.length)];
-
-      _placePiece(selectedCell[0], selectedCell[1]);
-    });
-  }
-
-  // 게임 재시작
-  void _resetGame() {
-    setState(() {
-      board = List.generate(boardSize, (_) => List.filled(boardSize, 0));
-      currentPlayer = 1;
-      gameOver = false;
-      gameResult = '';
-    });
   }
 }

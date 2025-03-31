@@ -64,7 +64,7 @@ class _SplashScreenState extends State<SplashScreen>
         decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/images/omok_land_splash_screen.png'),
-            fit: BoxFit.cover,
+            fit: BoxFit.fitWidth,
           ),
         ),
         alignment: Alignment.center,

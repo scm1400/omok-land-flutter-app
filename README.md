@@ -1,3 +1,5 @@
+dart run scripts/update_version.dart
+
 ZEP 오목 앱 기능 요약
 핵심 기능:
 ZEP 오목 웹앱(https://zep.us/@omok)을 네이티브 앱으로 제공

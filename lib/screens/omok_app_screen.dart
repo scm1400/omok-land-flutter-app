@@ -37,7 +37,7 @@ class _OmokAppScreenState extends State<OmokAppScreen>
 
   // 오목 앱 URL
   late final String omokUrl =
-      'https://zep.us/@omok/DEmNql?customData=${jsonEncode(customData)}';
+      'https://zep.us/@omok?customData=${jsonEncode(customData)}';
 
   // 사용자 통계 저장 키
   static const String _keyPlayCount = 'play_count';

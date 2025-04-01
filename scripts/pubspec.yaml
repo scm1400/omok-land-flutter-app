@@ -1,0 +1,9 @@
+name: scripts
+description: "Version management scripts"
+publish_to: 'none'
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  path: ^1.8.3 

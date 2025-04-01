@@ -11,6 +11,7 @@ import 'screens/omok_app_screen.dart';
 import 'screens/friends_screen.dart';
 import 'screens/chat_list_screen.dart';
 import 'services/version_check_service.dart';
+import 'config/app_version.dart';
 
 // 앱 컬러 팔레트 상수 정의
 class AppColors {
@@ -320,9 +321,7 @@ class UpdateRequiredScreen extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () async {
-                final Uri url = Uri.parse(
-                  'https://play.google.com/store/apps/details?id=com.example.zepFlutterApp',
-                );
+                final Uri url = Uri.parse(AppVersion.storeUrl);
                 if (await canLaunchUrl(url)) {
                   await launchUrl(url);
                 }

@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'screens/splash_screen.dart';
 import 'screens/omok_app_screen.dart';
 import 'screens/friends_screen.dart';
 import 'screens/chat_list_screen.dart';
+import 'services/version_check_service.dart';
 
 // 앱 컬러 팔레트 상수 정의
 class AppColors {
@@ -54,6 +55,9 @@ Future<void> main() async {
   await Hive.openBox<String>('zep_spaces');
   await Hive.openBox<bool>('favorites');
 
+  // 버전 체크
+  bool isLatestVersion = await VersionCheckService.checkVersion();
+
   // 상태바, 내비게이션바 컬러 설정(안드로이드)
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -64,11 +68,13 @@ Future<void> main() async {
     ),
   );
 
-  runApp(const MyApp());
+  runApp(MyApp(isLatestVersion: isLatestVersion));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLatestVersion;
+
+  const MyApp({super.key, required this.isLatestVersion});
 
   @override
   Widget build(BuildContext context) {
@@ -269,11 +275,63 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       initialRoute: '/',
       routes: {
-        '/': (context) => const SplashScreen(),
+        '/':
+            (context) =>
+                isLatestVersion
+                    ? const SplashScreen()
+                    : const UpdateRequiredScreen(),
         '/omok': (context) => const OmokAppScreen(),
         '/friends': (context) => const FriendsScreen(),
         '/chats': (context) => const ChatListScreen(),
       },
+    );
+  }
+}
+
+class UpdateRequiredScreen extends StatelessWidget {
+  const UpdateRequiredScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.system_update,
+              size: 64,
+              color: AppColors.oceanBlue,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '새로운 버전이 있습니다',
+              style: GoogleFonts.nanumGothic(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '앱을 사용하기 위해서는 최신 버전으로 업데이트가 필요합니다.',
+              style: GoogleFonts.nanumGothic(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () async {
+                final Uri url = Uri.parse(
+                  'https://play.google.com/store/apps/details?id=com.example.zepFlutterApp',
+                );
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url);
+                }
+              },
+              child: const Text('업데이트하기'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

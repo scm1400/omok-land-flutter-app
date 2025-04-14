@@ -276,9 +276,19 @@ class _OmokAppScreenState extends State<OmokAppScreen>
         // customData가 이미 있으면 기존 방식의 reload() 사용
         await _controller.reload();
       }
+
+      // 새로고침 후에는 뒤로가기 상태를 초기화
+      setState(() {
+        canGoBack = false;
+      });
     } else {
       // 오목 URL이 아니면 그냥 다시 로드
       await _controller.reload();
+
+      // 새로고침 후에는 뒤로가기 상태를 초기화
+      setState(() {
+        canGoBack = false;
+      });
     }
   }
 
@@ -415,7 +425,11 @@ class _OmokAppScreenState extends State<OmokAppScreen>
             Text(
               '오목랜드',
               style: GoogleFonts.blackHanSans(
-                textStyle: const TextStyle(fontSize: 22),
+                textStyle: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
           ],

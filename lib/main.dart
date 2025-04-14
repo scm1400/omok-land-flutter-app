@@ -295,40 +295,108 @@ class UpdateRequiredScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.skyBlue,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.system_update,
-              size: 64,
-              color: AppColors.oceanBlue,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '새로운 버전이 있습니다',
-              style: GoogleFonts.nanumGothic(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.woodBeige,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 15,
+                spreadRadius: 1,
+                offset: const Offset(0, 5),
               ),
+            ],
+            border: Border.all(
+              color: AppColors.earthBrown.withOpacity(0.3),
+              width: 1.5,
             ),
-            const SizedBox(height: 8),
-            Text(
-              '앱을 사용하기 위해서는 최신 버전으로 업데이트가 필요합니다.',
-              style: GoogleFonts.nanumGothic(fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () async {
-                final Uri url = Uri.parse(AppVersion.storeUrl);
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url);
-                }
-              },
-              child: const Text('업데이트하기'),
-            ),
-          ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.oceanBlue,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.oceanBlue.withOpacity(0.3),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.system_update_rounded,
+                  size: 48,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                '새로운 버전이 있습니다',
+                style: GoogleFonts.blackHanSans(
+                  fontSize: 22,
+                  color: AppColors.darkBrown,
+                  letterSpacing: 0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '앱을 사용하기 위해서는 최신 버전으로\n업데이트가 필요합니다.',
+                style: GoogleFonts.nanumGothic(
+                  fontSize: 16,
+                  color: AppColors.darkBrown.withOpacity(0.8),
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    final Uri url = Uri.parse(AppVersion.storeUrl);
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.coralOrange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 4,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.play_arrow_rounded),
+                      const SizedBox(width: 8),
+                      Text(
+                        '업데이트하기',
+                        style: GoogleFonts.nanumGothic(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
         ),
       ),
     );
